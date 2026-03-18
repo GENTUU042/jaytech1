@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NexusBot | Cloud Device Command Center</title>
     
     <!-- Tailwind CSS -->
@@ -15,7 +15,7 @@
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Framer Motion for smooth animations -->
+    <!-- Framer Motion -->
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     
     <!-- Lucide Icons -->
@@ -50,6 +50,7 @@
                         'gradient-x': 'gradient-x 15s ease infinite',
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'float': 'float 6s ease-in-out infinite',
+                        'spin-slow': 'spin 3s linear infinite',
                     },
                     keyframes: {
                         'gradient-x': {
@@ -67,31 +68,32 @@
     </script>
 
     <style>
+        * { -webkit-tap-highlight-color: transparent; }
         body { 
             background-color: #020617; 
             color: #e2e8f0;
             font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            overscroll-behavior: none;
         }
         
-        /* Advanced Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Mobile-optimized Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { 
             background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%); 
-            border-radius: 3px; 
+            border-radius: 2px; 
         }
-        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #818cf8 0%, #a78bfa 100%); }
         
-        /* Glassmorphism Utilities */
+        /* Glassmorphism */
         .glass {
-            background: rgba(30, 41, 59, 0.4);
+            background: rgba(30, 41, 59, 0.6);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
         
         .glass-strong {
-            background: rgba(15, 23, 42, 0.7);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -104,7 +106,7 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         
-        /* Animated Gradient Border */
+        /* Gradient Border */
         .gradient-border {
             position: relative;
             background: rgba(30, 41, 59, 0.6);
@@ -126,49 +128,34 @@
             transition: opacity 0.3s;
         }
         
-        .gradient-border:hover::before {
-            opacity: 1;
+        .gradient-border:hover::before { opacity: 1; }
+        
+        /* Mobile Touch Targets */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
         }
         
-        /* Shimmer Effect */
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 2s infinite;
-        }
+        /* Safe Area for Mobile */
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .safe-top { padding-top: env(safe-area-inset-top, 0px); }
         
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
+        /* Hide scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Glow Effects */
-        .glow-brand {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-        }
-        
-        .glow-success {
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-        }
-        
-        /* Custom Selection */
+        /* Selection */
         ::selection {
             background: rgba(99, 102, 241, 0.3);
             color: white;
         }
         
-        /* Smooth transitions */
-        .transition-all-300 {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        /* Hide scrollbar for clean look but keep functionality */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .mobile-full { width: 100vw; max-width: 100vw; }
+            .mobile-text-sm { font-size: 0.875rem; }
+            .mobile-p-2 { padding: 0.5rem; }
+            .mobile-gap-2 { gap: 0.5rem; }
         }
     </style>
 </head>
@@ -179,10 +166,9 @@
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const { motion, AnimatePresence } = window.Motion;
         
-        // --- Icons Component ---
+        // --- Icons ---
         const Icon = ({ name, size = 20, className = "" }) => {
             const iconRef = useRef(null);
-            
             useEffect(() => {
                 if (iconRef.current) {
                     iconRef.current.innerHTML = '';
@@ -194,11 +180,10 @@
                     lucide.createIcons({ icons: { [name]: lucide.icons[name] }, nameAttr: 'data-lucide', nodes: [iconElement] });
                 }
             }, [name, size]);
-            
             return <span ref={iconRef} className={className} />;
         };
 
-        // --- Toast Notification System ---
+        // --- Toast System ---
         const Toast = ({ message, type, onClose }) => {
             useEffect(() => {
                 const timer = setTimeout(onClose, 3000);
@@ -217,49 +202,115 @@
                     initial={{ opacity: 0, y: 50, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, x: 100 }}
-                    className={`fixed bottom-6 right-6 z-50 glass-strong px-6 py-4 rounded-2xl flex items-center gap-3 border border-white/10 shadow-2xl`}
+                    className="fixed bottom-6 right-6 z-[100] glass-strong px-4 py-3 rounded-2xl flex items-center gap-3 border border-white/10 shadow-2xl max-w-[90vw] sm:max-w-md"
                 >
-                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors[type]} flex items-center justify-center text-white shadow-lg`}>
-                        <Icon name={type === 'success' ? 'check' : type === 'error' ? 'x' : type === 'warning' ? 'alert-triangle' : 'info'} size={20} />
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors[type]} flex items-center justify-center text-white shadow-lg shrink-0`}>
+                        <Icon name={type === 'success' ? 'check' : type === 'error' ? 'x' : type === 'warning' ? 'alert-triangle' : 'info'} size={16} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <p className="font-semibold text-white text-sm">{type.charAt(0).toUpperCase() + type.slice(1)}</p>
-                        <p className="text-slate-400 text-xs">{message}</p>
+                        <p className="text-slate-400 text-xs truncate">{message}</p>
                     </div>
-                    <button onClick={onClose} className="ml-4 text-slate-500 hover:text-white transition-colors">
+                    <button onClick={onClose} className="ml-2 text-slate-500 hover:text-white transition-colors shrink-0">
                         <Icon name="x" size={16} />
                     </button>
                 </motion.div>
             );
         };
 
-        // --- Mock Data Generators ---
+        // --- Generate Rich Mock Data ---
         const generateDevices = (count) => {
             const devices = [];
-            const statuses = ['online', 'busy', 'offline', 'error'];
-            const botStatuses = ['running', 'idle', 'stopped', 'error'];
-            const tasks = ['Data Scraping', 'Account Creation', 'Content Posting', 'API Testing', 'Monitoring', 'Idle'];
-            const proxies = ['US-NY-01', 'DE-BER-02', 'SG-01', 'UK-LON-05', 'FR-PAR-01', 'JP-TOK-03', 'Rotating-Pool-A'];
+            const androidVersions = ['13', '12', '11', '10', '9'];
+            const manufacturers = ['Samsung', 'Google', 'Xiaomi', 'OnePlus', 'Huawei'];
+            const models = {
+                'Samsung': ['Galaxy S23', 'Galaxy A54', 'Galaxy Note 20'],
+                'Google': ['Pixel 7 Pro', 'Pixel 6a', 'Pixel 5'],
+                'Xiaomi': ['Mi 13', 'Redmi Note 12', 'POCO F5'],
+                'OnePlus': ['11 5G', '10 Pro', 'Nord 3'],
+                'Huawei': ['P60 Pro', 'Mate 50', 'nova 11']
+            };
+            const statuses = ['online', 'busy', 'offline', 'error', 'maintenance'];
+            const botStatuses = ['running', 'idle', 'stopped', 'error', 'updating'];
+            const tasks = [
+                'Instagram Automation', 'TikTok Scraper', 'Twitter Bot', 'Data Mining', 
+                'API Testing', 'Account Creator', 'Content Uploader', 'Story Viewer',
+                'DM Automation', 'Analytics Collector', 'Ad Clicker', 'Survey Bot'
+            ];
+            const proxies = [
+                { id: 'US-NY-01', country: 'US', city: 'New York', ip: '45.142.212.10' },
+                { id: 'DE-BER-02', country: 'DE', city: 'Berlin', ip: '185.199.228.11' },
+                { id: 'SG-01', country: 'SG', city: 'Singapore', ip: '103.253.145.22' },
+                { id: 'UK-LON-05', country: 'UK', city: 'London', ip: '185.199.231.12' },
+                { id: 'FR-PAR-01', country: 'FR', city: 'Paris', ip: '185.199.229.15' },
+                { id: 'JP-TOK-03', country: 'JP', city: 'Tokyo', ip: '45.142.214.20' },
+                { id: 'CA-TOR-02', country: 'CA', city: 'Toronto', ip: '192.99.47.11' },
+                { id: 'AU-SYD-01', country: 'AU', city: 'Sydney', ip: '139.99.236.8' }
+            ];
+            const regions = ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1', 'ap-northeast-1'];
             
             for (let i = 1; i <= count; i++) {
+                const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
+                const model = models[manufacturer][Math.floor(Math.random() * models[manufacturer].length)];
                 const status = statuses[Math.floor(Math.random() * statuses.length)];
+                const proxy = proxies[Math.floor(Math.random() * proxies.length)];
+                const region = regions[Math.floor(Math.random() * regions.length)];
+                
                 devices.push({
                     id: `DEV-${1000 + i}`,
-                    name: `Android-Node-${i.toString().padStart(2, '0')}`,
-                    status: status,
+                    name: `Android-${region.split('-')[0].toUpperCase()}-${i.toString().padStart(3, '0')}`,
+                    displayName: `${manufacturer} ${model}`,
+                    manufacturer,
+                    model,
+                    androidVersion: androidVersions[Math.floor(Math.random() * androidVersions.length)],
+                    status,
                     battery: Math.floor(Math.random() * 100),
+                    isCharging: Math.random() > 0.7,
                     network: Math.random() > 0.3 ? '5G' : 'WiFi',
                     signalStrength: Math.floor(Math.random() * 100),
                     ip: `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
-                    proxy: proxies[Math.floor(Math.random() * proxies.length)],
+                    publicIp: proxy.ip,
+                    proxy: proxy.id,
+                    proxyDetails: proxy,
                     botStatus: status === 'online' ? (Math.random() > 0.3 ? 'running' : 'idle') : 'stopped',
-                    lastActivity: new Date(Date.now() - Math.floor(Math.random() * 10000000)).toLocaleTimeString(),
+                    botVersion: `v2.${Math.floor(Math.random() * 5)}.${Math.floor(Math.random() * 10)}`,
+                    lastActivity: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(),
                     task: status === 'busy' ? tasks[Math.floor(Math.random() * tasks.length)] : 'None',
-                    uptime: Math.floor(Math.random() * 48) + 'h',
-                    temperature: Math.floor(Math.random() * 15) + 25, // 25-40°C
-                    cpuUsage: Math.floor(Math.random() * 80),
-                    ramUsage: Math.floor(Math.random() * 60) + 20,
-                    location: ['US East', 'EU West', 'Asia Pacific', 'US West'][Math.floor(Math.random() * 4)]
+                    uptime: Math.floor(Math.random() * 168), // hours
+                    temperature: Math.floor(Math.random() * 20) + 25,
+                    cpuUsage: Math.floor(Math.random() * 90),
+                    ramUsage: Math.floor(Math.random() * 70) + 20,
+                    ramTotal: 8, // GB
+                    storageUsed: Math.floor(Math.random() * 80),
+                    storageTotal: 128, // GB
+                    region,
+                    zone: `${region}a`,
+                    createdAt: new Date(Date.now() - Math.floor(Math.random() * 2592000000)).toISOString(),
+                    lastSeen: new Date(Date.now() - Math.floor(Math.random() * 300000)).toISOString(),
+                    sessionCount: Math.floor(Math.random() * 500),
+                    successRate: Math.floor(Math.random() * 30) + 70,
+                    errorsToday: Math.floor(Math.random() * 10),
+                    warnings: Math.floor(Math.random() * 5),
+                    imei: `35${Math.floor(Math.random() * 1000000000000).toString().padStart(13, '0')}`,
+                    serialNumber: `R58M${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                    macAddress: `02:00:00:${Math.floor(Math.random()*256).toString(16).padStart(2,'0')}:${Math.floor(Math.random()*256).toString(16).padStart(2,'0')}:${Math.floor(Math.random()*256).toString(16).padStart(2,'0')}`,
+                    screenResolution: '2400x1080',
+                    dpi: 400,
+                    rooted: Math.random() > 0.8,
+                    adbPort: 5555 + i,
+                    vncPort: 5900 + i,
+                    logs: Array.from({length: 5}, (_, j) => ({
+                        time: new Date(Date.now() - j * 60000).toLocaleTimeString(),
+                        level: ['INFO', 'WARN', 'ERROR', 'DEBUG'][Math.floor(Math.random() * 4)],
+                        message: [
+                            'Bot cycle completed successfully',
+                            'Proxy rotation triggered',
+                            'Element not found, retrying...',
+                            'Screenshot captured',
+                            'API rate limit hit, backing off',
+                            'Session token refreshed'
+                        ][Math.floor(Math.random() * 6)]
+                    }))
                 });
             }
             return devices;
@@ -267,16 +318,41 @@
 
         // --- Components ---
 
-        const SidebarItem = ({ icon, label, active, onClick, badge }) => (
+        const MobileNav = ({ activeTab, setActiveTab, onMenuClick }) => {
+            const tabs = [
+                { id: 'dashboard', icon: 'layout-dashboard', label: 'Home' },
+                { id: 'devices', icon: 'smartphone', label: 'Devices' },
+                { id: 'proxies', icon: 'globe', label: 'Proxies' },
+                { id: 'logs', icon: 'terminal', label: 'Logs' },
+                { id: 'more', icon: 'menu', label: 'More' }
+            ];
+
+            return (
+                <div className="md:hidden fixed bottom-0 left-0 right-0 glass-strong border-t border-white/10 safe-bottom z-40 pb-safe">
+                    <div className="flex justify-around items-center py-2">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => tab.id === 'more' ? onMenuClick() : setActiveTab(tab.id)}
+                                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-colors ${
+                                    activeTab === tab.id && tab.id !== 'more' ? 'text-brand-400' : 'text-slate-400'
+                                }`}
+                            >
+                                <Icon name={tab.icon} size={22} />
+                                <span className="text-[10px] font-medium">{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const SidebarItem = ({ icon, label, active, onClick, badge, collapsed }) => (
             <motion.button 
                 onClick={onClick}
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${
-                    active 
-                    ? 'text-white' 
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
+                className={`w-full flex items-center ${collapsed ? 'justify-center' : 'justify-between'} px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden touch-target`}
             >
                 {active && (
                     <motion.div
@@ -285,13 +361,13 @@
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                 )}
-                <div className="relative z-10 flex items-center gap-3">
+                <div className={`relative z-10 flex items-center ${collapsed ? '' : 'gap-3'}`}>
                     <span className={`transition-colors ${active ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
                         <Icon name={icon} size={20} />
                     </span>
-                    <span className="font-medium text-sm">{label}</span>
+                    {!collapsed && <span className="font-medium text-sm">{label}</span>}
                 </div>
-                {badge && (
+                {!collapsed && badge && (
                     <span className="relative z-10 bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                         {badge}
                     </span>
@@ -299,12 +375,13 @@
             </motion.button>
         );
 
-        const StatCard = ({ title, value, subtext, icon, trend, color = "brand", onClick }) => {
+        const StatCard = ({ title, value, subtext, icon, trend, color = "brand", onClick, subtitle }) => {
             const colorSchemes = {
                 brand: 'from-brand-500 to-purple-600 shadow-brand-500/25',
                 emerald: 'from-emerald-500 to-teal-600 shadow-emerald-500/25',
                 amber: 'from-amber-500 to-orange-600 shadow-amber-500/25',
-                rose: 'from-rose-500 to-pink-600 shadow-rose-500/25'
+                rose: 'from-rose-500 to-pink-600 shadow-rose-500/25',
+                blue: 'from-blue-500 to-cyan-600 shadow-blue-500/25'
             };
 
             return (
@@ -312,21 +389,22 @@
                     whileHover={{ y: -4, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={onClick}
-                    className="glass-card p-6 rounded-2xl relative overflow-hidden cursor-pointer group"
+                    className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden cursor-pointer group touch-target"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-10 -mt-10 blur-2xl group-hover:from-white/10 transition-all duration-500" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-8 -mt-8 blur-2xl group-hover:from-white/10 transition-all duration-500" />
                     
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="min-w-0">
                             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">{title}</p>
-                            <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
+                            <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{value}</h3>
+                            {subtitle && <p className="text-xs text-slate-500 mt-1 truncate">{subtitle}</p>}
                         </div>
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${colorSchemes[color]} shadow-lg text-white`}>
-                            <Icon name={icon} size={22} />
+                        <div className={`p-2.5 sm:p-3 rounded-xl bg-gradient-to-br ${colorSchemes[color]} shadow-lg text-white shrink-0`}>
+                            <Icon name={icon} size={20} className="sm:w-6 sm:h-6" />
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                             trend === 'up' ? 'bg-emerald-500/20 text-emerald-400' : 
                             trend === 'down' ? 'bg-rose-500/20 text-rose-400' : 
@@ -339,19 +417,23 @@
             );
         };
 
-        const StatusBadge = ({ status, pulse = false }) => {
+        const StatusBadge = ({ status, pulse = false, size = 'sm' }) => {
             const styles = {
                 online: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
                 busy: 'bg-brand-500/15 text-brand-400 border-brand-500/30',
                 offline: 'bg-slate-700/30 text-slate-400 border-slate-600/30',
                 error: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+                maintenance: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
                 running: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
                 idle: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
                 stopped: 'bg-slate-700/30 text-slate-400 border-slate-600/30',
+                updating: 'bg-blue-500/15 text-blue-400 border-blue-500/30'
             };
             
+            const sizeClasses = size === 'lg' ? 'px-3 py-1.5 text-sm' : 'px-2.5 py-1 text-xs';
+            
             return (
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${styles[status] || styles.offline} flex items-center gap-1.5 w-fit`}>
+                <span className={`${sizeClasses} rounded-full font-semibold border ${styles[status] || styles.offline} flex items-center gap-1.5 w-fit shrink-0`}>
                     {pulse && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                 </span>
@@ -365,33 +447,34 @@
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ y: -4 }}
                 onClick={() => onClick(device)}
-                className="glass p-5 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+                className="glass p-4 sm:p-5 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all duration-300 cursor-pointer group relative overflow-hidden touch-target"
             >
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 
                 <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    <div className="flex justify-between items-start mb-3 sm:mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
                                 device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' :
                                 device.status === 'busy' ? 'bg-brand-500/20 text-brand-400' :
                                 'bg-slate-700/50 text-slate-400'
                             }`}>
-                                <Icon name="smartphone" size={20} />
+                                <Icon name="smartphone" size={20} className="sm:w-6 sm:h-6" />
                             </div>
-                            <div>
-                                <h3 className="font-semibold text-white text-sm">{device.name}</h3>
-                                <p className="text-xs text-slate-500 font-mono">{device.id}</p>
+                            <div className="min-w-0">
+                                <h3 className="font-semibold text-white text-sm sm:text-base truncate">{device.name}</h3>
+                                <p className="text-xs text-slate-500 font-mono truncate">{device.id}</p>
+                                <p className="text-[10px] text-slate-600 truncate">{device.displayName}</p>
                             </div>
                         </div>
                         <StatusBadge status={device.status} pulse={device.status === 'online'} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-slate-900/50 rounded-lg p-2">
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                        <div className="bg-slate-900/50 rounded-lg p-2 sm:p-3">
                             <p className="text-[10px] text-slate-500 uppercase tracking-wider">Battery</p>
                             <div className="flex items-center gap-2 mt-1">
-                                <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                <div className="flex-1 h-1.5 sm:h-2 bg-slate-700 rounded-full overflow-hidden">
                                     <div 
                                         className={`h-full rounded-full transition-all duration-500 ${
                                             device.battery > 50 ? 'bg-emerald-500' : device.battery > 20 ? 'bg-amber-500' : 'bg-rose-500'
@@ -402,18 +485,20 @@
                                 <span className="text-xs font-mono text-slate-300">{device.battery}%</span>
                             </div>
                         </div>
-                        <div className="bg-slate-900/50 rounded-lg p-2">
+                        <div className="bg-slate-900/50 rounded-lg p-2 sm:p-3">
                             <p className="text-[10px] text-slate-500 uppercase tracking-wider">Proxy</p>
-                            <p className="text-xs text-slate-300 truncate mt-1">{device.proxy}</p>
+                            <p className="text-xs sm:text-sm text-slate-300 truncate mt-1">{device.proxy}</p>
+                            <p className="text-[10px] text-slate-600 truncate">{device.proxyDetails.city}</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
-                        <span className="flex items-center gap-1">
-                            <Icon name="wifi" size={12} /> {device.network}
+                    <div className="flex items-center justify-between text-xs text-slate-400 mb-3 sm:mb-4">
+                        <span className="flex items-center gap-1 truncate">
+                            <Icon name="wifi" size={12} /> <span className="hidden sm:inline">{device.network}</span>
+                            <span className="sm:hidden">{device.network === 'WiFi' ? 'WiFi' : '5G'}</span>
                         </span>
-                        <span className="flex items-center gap-1">
-                            <Icon name="clock" size={12} /> {device.lastActivity}
+                        <span className="flex items-center gap-1 truncate">
+                            <Icon name="clock" size={12} /> {new Date(device.lastActivity).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </span>
                     </div>
 
@@ -422,227 +507,388 @@
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={(e) => { e.stopPropagation(); onAction(device.id, 'start'); }}
-                            className="flex-1 bg-brand-600 hover:bg-brand-500 text-white py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                            disabled={device.botStatus === 'running'}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white py-2.5 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 touch-target"
                         >
-                            <Icon name="play" size={12} /> Start
+                            <Icon name="play" size={14} /> <span className="hidden sm:inline">Start</span>
                         </motion.button>
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={(e) => { e.stopPropagation(); onAction(device.id, 'stop'); }}
-                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+                            disabled={device.botStatus === 'stopped'}
+                            className="flex-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 text-slate-300 py-2.5 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 touch-target"
                         >
-                            <Icon name="square" size={12} /> Stop
+                            <Icon name="square" size={14} /> <span className="hidden sm:inline">Stop</span>
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={(e) => { e.stopPropagation(); onClick(device); }}
+                            className="px-3 bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 py-2.5 rounded-xl text-xs font-medium transition-colors touch-target sm:hidden"
+                        >
+                            <Icon name="chevron-right" size={14} />
                         </motion.button>
                     </div>
                 </div>
             </motion.div>
         );
 
-        // --- Modals ---
-
+        // --- Device Detail Modal (Mobile Optimized) ---
         const DeviceDetailModal = ({ device, onClose, onAction }) => {
             if (!device) return null;
+            const [activeTab, setActiveTab] = useState('overview');
+
+            const tabs = [
+                { id: 'overview', label: 'Overview', icon: 'activity' },
+                { id: 'hardware', label: 'Hardware', icon: 'cpu' },
+                { id: 'network', label: 'Network', icon: 'wifi' },
+                { id: 'logs', label: 'Logs', icon: 'terminal' }
+            ];
 
             return (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
                     onClick={onClose}
                 >
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
+                        exit={{ y: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="glass-strong w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-white/10 max-h-[90vh] overflow-y-auto"
+                        className="glass-strong w-full sm:w-full sm:max-w-5xl sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden border border-white/10 h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-white/5 bg-gradient-to-r from-brand-600/10 to-purple-600/10">
+                        <div className="p-4 sm:p-6 border-b border-white/5 bg-gradient-to-r from-brand-600/10 to-purple-600/10 shrink-0">
                             <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
-                                        <Icon name="smartphone" size={32} />
+                                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/30 shrink-0">
+                                        <Icon name="smartphone" size={24} className="sm:w-8 sm:h-8" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-2xl font-bold text-white">{device.name}</h2>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-sm text-slate-400 font-mono">{device.id}</span>
-                                            <span className="w-1 h-1 rounded-full bg-slate-600" />
-                                            <StatusBadge status={device.status} pulse={true} />
+                                    <div className="min-w-0">
+                                        <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{device.name}</h2>
+                                        <div className="flex items-center gap-2 sm:gap-3 mt-1 flex-wrap">
+                                            <span className="text-xs sm:text-sm text-slate-400 font-mono">{device.id}</span>
+                                            <StatusBadge status={device.status} pulse={true} size="sm" />
                                         </div>
+                                        <p className="text-xs text-slate-500 mt-1">{device.displayName} • Android {device.androidVersion}</p>
                                     </div>
                                 </div>
                                 <motion.button 
                                     whileHover={{ scale: 1.1, rotate: 90 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={onClose} 
-                                    className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors"
+                                    className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors shrink-0"
                                 >
-                                    <Icon name="x" size={24} />
+                                    <Icon name="x" size={20} />
                                 </motion.button>
+                            </div>
+
+                            {/* Mobile Tab Navigation */}
+                            <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar pb-2 sm:hidden">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
+                                            activeTab === tab.id 
+                                            ? 'bg-brand-600 text-white' 
+                                            : 'bg-slate-800 text-slate-400'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Left Column - Stats */}
-                            <div className="space-y-4">
-                                <div className="glass p-4 rounded-2xl">
-                                    <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                                        <Icon name="activity" size={16} /> System Metrics
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-slate-400">CPU Usage</span>
-                                                <span className="text-brand-400 font-mono">{device.cpuUsage}%</span>
-                                            </div>
-                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${device.cpuUsage}%` }}
-                                                    className="h-full bg-gradient-to-r from-brand-500 to-purple-500 rounded-full"
-                                                />
-                                            </div>
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                            <div className="hidden sm:grid sm:grid-cols-3 gap-6">
+                                {/* Desktop Layout - Same as before but enhanced */}
+                                <div className="space-y-4">
+                                    <div className="glass p-4 rounded-2xl">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                                            <Icon name="activity" size={16} /> System Metrics
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <MetricBar label="CPU Usage" value={device.cpuUsage} color="brand" suffix="%" />
+                                            <MetricBar label="RAM Usage" value={device.ramUsage} color="purple" suffix={`% (${Math.round(device.ramUsage/100 * device.ramTotal * 10)/10}GB)`} />
+                                            <MetricBar label="Storage" value={device.storageUsed} color="amber" suffix={`% (${device.storageUsed}GB / ${device.storageTotal}GB)`} />
+                                            <MetricBar label="Temperature" value={(device.temperature/50)*100} color={device.temperature > 35 ? 'rose' : 'emerald'} suffix={`${device.temperature}°C`} />
                                         </div>
-                                        <div>
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-slate-400">RAM Usage</span>
-                                                <span className="text-purple-400 font-mono">{device.ramUsage}%</span>
-                                            </div>
-                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                <motion.div 
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${device.ramUsage}%` }}
-                                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="flex justify-between text-xs mb-2">
-                                                <span className="text-slate-400">Temperature</span>
-                                                <span className={`font-mono ${device.temperature > 35 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                                    {device.temperature}°C
-                                                </span>
-                                            </div>
-                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full rounded-full ${device.temperature > 35 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                                    style={{width: `${(device.temperature / 50) * 100}%`}}
-                                                />
-                                            </div>
+                                    </div>
+
+                                    <div className="glass p-4 rounded-2xl">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-3">Device Info</h3>
+                                        <div className="space-y-2 text-xs sm:text-sm">
+                                            <InfoRow label="IMEI" value={device.imei} />
+                                            <InfoRow label="Serial" value={device.serialNumber} />
+                                            <InfoRow label="MAC Address" value={device.macAddress} />
+                                            <InfoRow label="Resolution" value={device.screenResolution} />
+                                            <InfoRow label="Rooted" value={device.rooted ? 'Yes ⚠️' : 'No'} valueColor={device.rooted ? 'text-amber-400' : 'text-emerald-400'} />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="glass p-4 rounded-2xl">
-                                    <h3 className="text-sm font-semibold text-slate-300 mb-3">Network Info</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">IP Address</span>
-                                            <span className="text-slate-300 font-mono">{device.ip}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Connection</span>
-                                            <span className="text-emerald-400">{device.network}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-slate-500">Signal</span>
-                                            <div className="flex items-center gap-1">
-                                                <div className="flex gap-0.5">
-                                                    {[1,2,3,4].map(i => (
-                                                        <div key={i} className={`w-1 rounded-full ${i <= Math.floor(device.signalStrength/25) ? 'bg-emerald-500' : 'bg-slate-700'}`} 
-                                                             style={{height: `${i * 3}px`}} />
-                                                    ))}
+                                <div className="space-y-4">
+                                    <div className="glass p-4 rounded-2xl">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-4">Current Session</h3>
+                                        <div className="space-y-3">
+                                            <div className="bg-slate-900/50 p-3 rounded-xl">
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Active Task</p>
+                                                <p className="text-base sm:text-lg font-semibold text-white">{device.task}</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-slate-900/50 p-3 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Uptime</p>
+                                                    <p className="text-lg font-mono text-brand-400">{device.uptime}h</p>
                                                 </div>
-                                                <span className="text-slate-300 text-xs">{device.signalStrength}%</span>
+                                                <div className="bg-slate-900/50 p-3 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Success Rate</p>
+                                                    <p className="text-lg font-mono text-emerald-400">{device.successRate}%</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-slate-900/50 p-3 rounded-xl">
+                                                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Bot Version</p>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-white font-mono">{device.botVersion}</span>
+                                                    {device.botStatus === 'updating' && (
+                                                        <span className="text-xs text-blue-400 flex items-center gap-1">
+                                                            <Icon name="refresh-cw" size={12} className="animate-spin" /> Updating...
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass p-4 rounded-2xl">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-3">Statistics</h3>
+                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                            <div className="text-center p-3 bg-slate-900/50 rounded-xl">
+                                                <p className="text-2xl font-bold text-white">{device.sessionCount}</p>
+                                                <p className="text-xs text-slate-500">Total Sessions</p>
+                                            </div>
+                                            <div className="text-center p-3 bg-slate-900/50 rounded-xl">
+                                                <p className="text-2xl font-bold text-white">{device.errorsToday}</p>
+                                                <p className="text-xs text-slate-500">Errors Today</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="space-y-4">
+                                    <div className="glass p-4 rounded-2xl">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-3">Network Configuration</h3>
+                                        <div className="space-y-2 text-xs sm:text-sm">
+                                            <InfoRow label="Private IP" value={device.ip} />
+                                            <InfoRow label="Public IP" value={device.publicIp} />
+                                            <InfoRow label="Proxy" value={device.proxy} />
+                                            <InfoRow label="Location" value={`${device.proxyDetails.city}, ${device.proxyDetails.country}`} />
+                                            <InfoRow label="Region" value={device.region} />
+                                            <InfoRow label="Zone" value={device.zone} />
+                                            <InfoRow label="ADB Port" value={device.adbPort} />
+                                            <InfoRow label="VNC Port" value={device.vncPort} />
+                                        </div>
+                                    </div>
+
+                                    <div className="glass p-4 rounded-2xl h-64">
+                                        <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                            Live Logs
+                                        </h3>
+                                        <LogViewer logs={device.logs} />
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Middle Column - Session Info */}
-                            <div className="space-y-4">
-                                <div className="glass p-4 rounded-2xl h-full">
-                                    <h3 className="text-sm font-semibold text-slate-300 mb-4">Current Session</h3>
+                            {/* Mobile Tab Content */}
+                            <div className="sm:hidden space-y-4">
+                                {activeTab === 'overview' && (
+                                    <>
+                                        <div className="glass p-4 rounded-2xl">
+                                            <h3 className="text-sm font-semibold text-slate-300 mb-3">Session Status</h3>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl">
+                                                    <span className="text-slate-400">Current Task</span>
+                                                    <span className="text-white font-medium text-right">{device.task}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl">
+                                                    <span className="text-slate-400">Bot Status</span>
+                                                    <StatusBadge status={device.botStatus} />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="p-3 bg-slate-900/50 rounded-xl text-center">
+                                                        <p className="text-xl font-bold text-brand-400">{device.uptime}h</p>
+                                                        <p className="text-xs text-slate-500">Uptime</p>
+                                                    </div>
+                                                    <div className="p-3 bg-slate-900/50 rounded-xl text-center">
+                                                        <p className="text-xl font-bold text-emerald-400">{device.successRate}%</p>
+                                                        <p className="text-xs text-slate-500">Success</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="glass p-4 rounded-2xl">
+                                            <h3 className="text-sm font-semibold text-slate-300 mb-3">Quick Stats</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="p-3 bg-slate-900/50 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Sessions</p>
+                                                    <p className="text-lg font-bold text-white">{device.sessionCount}</p>
+                                                </div>
+                                                <div className="p-3 bg-slate-900/50 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Errors Today</p>
+                                                    <p className="text-lg font-bold text-white">{device.errorsToday}</p>
+                                                </div>
+                                                <div className="p-3 bg-slate-900/50 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Warnings</p>
+                                                    <p className="text-lg font-bold text-amber-400">{device.warnings}</p>
+                                                </div>
+                                                <div className="p-3 bg-slate-900/50 rounded-xl">
+                                                    <p className="text-xs text-slate-500">Bot Version</p>
+                                                    <p className="text-lg font-bold text-white">{device.botVersion}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {activeTab === 'hardware' && (
                                     <div className="space-y-4">
-                                        <div className="bg-slate-900/50 p-4 rounded-xl">
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Active Task</p>
-                                            <p className="text-lg font-semibold text-white">{device.task}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="bg-slate-900/50 p-3 rounded-xl">
-                                                <p className="text-xs text-slate-500">Uptime</p>
-                                                <p className="text-lg font-mono text-brand-400">{device.uptime}</p>
-                                            </div>
-                                            <div className="bg-slate-900/50 p-3 rounded-xl">
-                                                <p className="text-xs text-slate-500">Bot Status</p>
-                                                <p className={`text-lg font-semibold ${device.botStatus === 'running' ? 'text-emerald-400' : 'text-slate-400'}`}>
-                                                    {device.botStatus}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <MetricBar label="CPU Usage" value={device.cpuUsage} color="brand" suffix="%" />
+                                        <MetricBar label="RAM Usage" value={device.ramUsage} color="purple" suffix="%" />
+                                        <MetricBar label="Storage" value={device.storageUsed} color="amber" suffix="%" />
+                                        <MetricBar label="Temperature" value={(device.temperature/50)*100} color={device.temperature > 35 ? 'rose' : 'emerald'} suffix={`${device.temperature}°C`} />
+                                        <MetricBar label="Battery" value={device.battery} color={device.battery > 20 ? 'emerald' : 'rose'} suffix={`${device.battery}% ${device.isCharging ? '⚡' : ''}`} />
                                         
-                                        <div className="bg-slate-900/50 p-4 rounded-xl">
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Assigned Proxy</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-white font-mono">{device.proxy}</span>
-                                                <button className="text-xs text-brand-400 hover:text-brand-300">Change</button>
+                                        <div className="glass p-4 rounded-2xl mt-4">
+                                            <h3 className="text-sm font-semibold text-slate-300 mb-3">Device Details</h3>
+                                            <div className="space-y-2 text-sm">
+                                                <InfoRow label="Model" value={device.displayName} />
+                                                <InfoRow label="Android" value={device.androidVersion} />
+                                                <InfoRow label="Resolution" value={device.screenResolution} />
+                                                <InfoRow label="DPI" value={device.dpi} />
+                                                <InfoRow label="Rooted" value={device.rooted ? 'Yes' : 'No'} valueColor={device.rooted ? 'text-amber-400' : 'text-emerald-400'} />
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                )}
 
-                            {/* Right Column - Live Logs */}
-                            <div className="glass p-4 rounded-2xl">
-                                <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                    Live Logs
-                                </h3>
-                                <div className="h-64 overflow-y-auto font-mono text-xs space-y-2 pr-2">
-                                    {[
-                                        {t: '10:42:05', m: 'Bot initialized', c: 'text-emerald-400'},
-                                        {t: '10:42:12', m: 'Connected to proxy', c: 'text-blue-400'},
-                                        {t: '10:42:15', m: 'Starting task sequence', c: 'text-slate-300'},
-                                        {t: '10:43:01', m: 'Executing step 1/5', c: 'text-slate-300'},
-                                        {t: '10:43:15', m: 'Data received (2.4KB)', c: 'text-purple-400'},
-                                        {t: '10:44:00', m: 'Step 1 completed', c: 'text-emerald-400'},
-                                    ].map((log, i) => (
-                                        <div key={i} className="flex gap-2">
-                                            <span className="text-slate-600 shrink-0">{log.t}</span>
-                                            <span className={log.c}>{log.m}</span>
-                                        </div>
-                                    ))}
-                                    <div className="animate-pulse text-slate-500">_</div>
-                                </div>
+                                {activeTab === 'network' && (
+                                    <div className="glass p-4 rounded-2xl space-y-3">
+                                        <InfoRow label="Private IP" value={device.ip} />
+                                        <InfoRow label="Public IP" value={device.publicIp} />
+                                        <InfoRow label="MAC Address" value={device.macAddress} />
+                                        <InfoRow label="Network Type" value={device.network} />
+                                        <InfoRow label="Signal Strength" value={`${device.signalStrength}%`} />
+                                        <div className="h-px bg-slate-800 my-2" />
+                                        <InfoRow label="Proxy ID" value={device.proxy} />
+                                        <InfoRow label="Proxy Location" value={`${device.proxyDetails.city}, ${device.proxyDetails.country}`} />
+                                        <InfoRow label="Region" value={device.region} />
+                                    </div>
+                                )}
+
+                                {activeTab === 'logs' && (
+                                    <div className="glass p-4 rounded-2xl h-[50vh]">
+                                        <LogViewer logs={device.logs} />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="p-6 border-t border-white/5 bg-slate-900/30 flex gap-3">
-                            {['start', 'stop', 'restart', 'adb reconnect'].map((action) => (
-                                <motion.button
-                                    key={action}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => onAction(device.id, action)}
-                                    className={`px-6 py-3 rounded-xl font-medium text-sm transition-all ${
-                                        action === 'start' ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' :
-                                        action === 'stop' ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/25' :
-                                        action === 'restart' ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/25' :
-                                        'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                                    }`}
-                                >
-                                    {action.charAt(0).toUpperCase() + action.slice(1)}
-                                </motion.button>
-                            ))}
+                        <div className="p-4 sm:p-6 border-t border-white/5 bg-slate-900/30 shrink-0">
+                            <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3">
+                                <ActionButton action="start" device={device} onAction={onAction} />
+                                <ActionButton action="stop" device={device} onAction={onAction} />
+                                <ActionButton action="restart" device={device} onAction={onAction} />
+                                <ActionButton action="adb" device={device} onAction={onAction} />
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>
+            );
+        };
+
+        // Helper Components
+        const MetricBar = ({ label, value, color, suffix }) => {
+            const colors = {
+                brand: 'from-brand-500 to-purple-500',
+                purple: 'from-purple-500 to-pink-500',
+                amber: 'from-amber-500 to-orange-500',
+                emerald: 'from-emerald-500 to-teal-500',
+                rose: 'from-rose-500 to-pink-500',
+                blue: 'from-blue-500 to-cyan-500'
+            };
+            
+            return (
+                <div>
+                    <div className="flex justify-between text-xs mb-2">
+                        <span className="text-slate-400">{label}</span>
+                        <span className={`font-mono ${color === 'rose' ? 'text-rose-400' : color === 'emerald' ? 'text-emerald-400' : 'text-brand-400'}`}>
+                            {suffix}
+                        </span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(value, 100)}%` }}
+                            className={`h-full bg-gradient-to-r ${colors[color]} rounded-full`}
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        const InfoRow = ({ label, value, valueColor = 'text-slate-300' }) => (
+            <div className="flex justify-between items-center py-1.5 border-b border-slate-800/50 last:border-0">
+                <span className="text-slate-500 text-xs sm:text-sm">{label}</span>
+                <span className={`font-mono text-xs sm:text-sm ${valueColor} truncate ml-2 max-w-[50%]`}>{value}</span>
+            </div>
+        );
+
+        const LogViewer = ({ logs }) => (
+            <div className="h-full overflow-y-auto font-mono text-xs space-y-1 pr-2">
+                {logs.map((log, i) => (
+                    <div key={i} className="flex gap-2 py-1 border-b border-slate-800/30">
+                        <span className="text-slate-600 shrink-0">{log.time}</span>
+                        <span className={`shrink-0 ${
+                            log.level === 'ERROR' ? 'text-rose-400' : 
+                            log.level === 'WARN' ? 'text-amber-400' : 
+                            log.level === 'DEBUG' ? 'text-purple-400' : 
+                            'text-emerald-400'
+                        }`}>[{log.level}]</span>
+                        <span className="text-slate-300 break-all">{log.message}</span>
+                    </div>
+                ))}
+                <div className="animate-pulse text-brand-400 mt-2">_</div>
+            </div>
+        );
+
+        const ActionButton = ({ action, device, onAction }) => {
+            const configs = {
+                start: { color: 'bg-emerald-600 hover:bg-emerald-500', icon: 'play', text: 'Start', disabled: device.botStatus === 'running' },
+                stop: { color: 'bg-rose-600 hover:bg-rose-500', icon: 'square', text: 'Stop', disabled: device.botStatus === 'stopped' },
+                restart: { color: 'bg-brand-600 hover:bg-brand-500', icon: 'refresh-cw', text: 'Restart', disabled: false },
+                adb: { color: 'bg-slate-700 hover:bg-slate-600', icon: 'terminal', text: 'ADB', disabled: false }
+            };
+            const cfg = configs[action];
+            
+            return (
+                <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onAction(device.id, action)}
+                    disabled={cfg.disabled}
+                    className={`${cfg.color} disabled:bg-slate-800 disabled:text-slate-600 text-white py-3 sm:py-3 rounded-xl font-medium text-xs sm:text-sm transition-colors flex items-center justify-center gap-2 touch-target ${action === 'adb' ? 'col-span-2 sm:col-span-1' : ''}`}
+                >
+                    <Icon name={cfg.icon} size={14} /> {cfg.text}
+                </motion.button>
             );
         };
 
@@ -653,60 +899,70 @@
                 const online = devices.filter(d => d.status === 'online').length;
                 const busy = devices.filter(d => d.status === 'busy').length;
                 const errors = devices.filter(d => d.status === 'error').length;
+                const maintenance = devices.filter(d => d.status === 'maintenance').length;
                 const running = devices.filter(d => d.botStatus === 'running').length;
-                return { total: devices.length, online, busy, errors, running };
+                const totalSessions = devices.reduce((acc, d) => acc + d.sessionCount, 0);
+                const avgSuccess = Math.round(devices.reduce((acc, d) => acc + d.successRate, 0) / devices.length);
+                
+                return { 
+                    total: devices.length, online, busy, errors, maintenance, running, 
+                    totalSessions, avgSuccess,
+                    totalErrors: devices.reduce((acc, d) => acc + d.errorsToday, 0)
+                };
             }, [devices]);
 
-            const recentDevices = devices.slice(0, 4);
+            const recentDevices = devices.slice(0, window.innerWidth < 768 ? 2 : 4);
 
             return (
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6 pb-20 sm:pb-0"
                 >
-                    {/* Welcome Section */}
-                    <div className="flex justify-between items-end">
+                    {/* Welcome */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                         <div>
                             <motion.h1 
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                className="text-3xl font-bold text-white mb-1"
+                                className="text-2xl sm:text-3xl font-bold text-white mb-1"
                             >
                                 Command Center
                             </motion.h1>
-                            <p className="text-slate-400">Monitor and control your device fleet in real-time.</p>
+                            <p className="text-slate-400 text-sm sm:text-base">Monitor and control your {stats.total} device fleet in real-time.</p>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-2 w-full sm:w-auto">
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="glass px-4 py-2.5 rounded-xl text-slate-300 text-sm font-medium hover:text-white transition-colors flex items-center gap-2"
+                                onClick={() => addToast('Exporting detailed report...', 'info')}
+                                className="flex-1 sm:flex-none glass px-4 py-2.5 rounded-xl text-slate-300 text-sm font-medium hover:text-white transition-colors flex items-center justify-center gap-2 touch-target"
                             >
-                                <Icon name="download" size={16} /> Export Report
+                                <Icon name="download" size={16} /> <span className="hidden sm:inline">Export</span>
                             </motion.button>
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => addToast('New device wizard opened', 'info')}
-                                className="bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 flex items-center gap-2"
+                                onClick={() => addToast('Device onboarding wizard opened', 'info')}
+                                className="flex-1 sm:flex-none bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 touch-target"
                             >
-                                <Icon name="plus" size={16} /> Add Device
+                                <Icon name="plus" size={16} /> <span className="hidden sm:inline">Add Device</span>
                             </motion.button>
                         </div>
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         <StatCard 
                             title="Total Fleet" 
                             value={stats.total} 
-                            subtext="+3 this week" 
+                            subtext={`${stats.online} online`} 
                             icon="smartphone" 
                             trend="up" 
                             color="brand"
-                            onClick={() => addToast('Viewing all devices', 'info')}
+                            subtitle={`${stats.maintenance} in maintenance`}
+                            onClick={() => addToast('Viewing fleet overview', 'info')}
                         />
                         <StatCard 
                             title="Active Bots" 
@@ -715,39 +971,44 @@
                             icon="zap" 
                             trend="up" 
                             color="emerald"
+                            subtitle={`${stats.busy} devices busy`}
                             onClick={() => addToast('Filtering active bots', 'info')}
                         />
                         <StatCard 
-                            title="System Errors" 
-                            value={stats.errors} 
-                            subtext="Needs attention" 
-                            icon="alert-triangle" 
-                            trend="down" 
-                            color="rose"
-                            onClick={() => addToast('Viewing error logs', 'warning')}
+                            title="Success Rate" 
+                            value={`${stats.avgSuccess}%`} 
+                            subtext="Fleet average"
+                            icon="check-circle" 
+                            trend="up" 
+                            color="blue"
+                            subtitle={`${stats.totalSessions.toLocaleString()} total sessions`}
+                            onClick={() => addToast('Viewing performance analytics', 'info')}
                         />
                         <StatCard 
-                            title="Avg Latency" 
-                            value="142ms" 
-                            subtext="Optimal performance" 
-                            icon="wifi" 
-                            trend="up" 
-                            color="amber"
-                            onClick={() => addToast('Network diagnostics opened', 'info')}
+                            title="Issues Today" 
+                            value={stats.totalErrors} 
+                            subtext={stats.errors > 0 ? `${stats.errors} devices offline` : 'All systems normal'} 
+                            icon="alert-triangle" 
+                            trend={stats.totalErrors > 10 ? 'down' : 'up'} 
+                            color={stats.totalErrors > 10 ? 'rose' : 'amber'}
+                            onClick={() => addToast('Viewing error logs', stats.totalErrors > 0 ? 'warning' : 'info')}
                         />
                     </div>
 
-                    {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Content */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                         {/* Device Grid */}
-                        <div className="lg:col-span-2 space-y-4">
+                        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold text-white">Active Devices</h3>
-                                <button className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+                                <h3 className="text-base sm:text-lg font-semibold text-white">Active Devices</h3>
+                                <button 
+                                    onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Tab'}))}
+                                    className="text-xs sm:text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1 touch-target"
+                                >
                                     View All <Icon name="arrow-right" size={14} />
                                 </button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <AnimatePresence>
                                     {recentDevices.map((device) => (
                                         <DeviceCard 
@@ -763,39 +1024,51 @@
 
                         {/* Activity Feed */}
                         <div className="glass rounded-2xl border border-white/5 overflow-hidden">
-                            <div className="p-4 border-b border-white/5 flex justify-between items-center">
-                                <h3 className="font-semibold text-white flex items-center gap-2">
+                            <div className="p-3 sm:p-4 border-b border-white/5 flex justify-between items-center">
+                                <h3 className="font-semibold text-white text-sm sm:text-base flex items-center gap-2">
                                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                                     Live Activity
                                 </h3>
-                                <button className="text-xs text-slate-400 hover:text-white">Clear</button>
+                                <button 
+                                    onClick={() => addToast('Activity log cleared', 'info')}
+                                    className="text-xs text-slate-400 hover:text-white touch-target"
+                                >
+                                    Clear
+                                </button>
                             </div>
-                            <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
-                                {[
-                                    {d: 'DEV-1001', a: 'completed task', t: '2m ago', c: 'emerald'},
-                                    {d: 'DEV-1003', a: 'restarted bot', t: '5m ago', c: 'blue'},
-                                    {d: 'DEV-1005', a: 'high CPU usage', t: '8m ago', c: 'amber'},
-                                    {d: 'DEV-1002', a: 'proxy switched', t: '12m ago', c: 'purple'},
-                                    {d: 'DEV-1008', a: 'went offline', t: '15m ago', c: 'rose'},
-                                ].map((item, i) => (
-                                    <motion.div 
-                                        key={i}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/30 hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                                    >
-                                        <div className={`w-8 h-8 rounded-lg bg-${item.c}-500/20 text-${item.c}-400 flex items-center justify-center text-xs font-bold`}>
-                                            {item.d.split('-')[1]}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm text-slate-300 group-hover:text-white transition-colors">
-                                                <span className="font-mono text-brand-400">{item.d}</span> {item.a}
-                                            </p>
-                                            <p className="text-xs text-slate-500">{item.t}</p>
-                                        </div>
-                                    </motion.div>
-                                ))}
+                            <div className="p-3 sm:p-4 space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
+                                {devices.slice(0, 6).map((device, i) => {
+                                    const actions = [
+                                        { text: 'completed task', color: 'emerald', icon: 'check' },
+                                        { text: 'started bot', color: 'brand', icon: 'play' },
+                                        { text: 'high CPU usage', color: 'amber', icon: 'cpu' },
+                                        { text: 'proxy rotated', color: 'purple', icon: 'refresh-cw' },
+                                        { text: 'battery low', color: 'rose', icon: 'battery-warning' },
+                                        { text: 'reconnected', color: 'blue', icon: 'wifi' }
+                                    ];
+                                    const action = actions[i % actions.length];
+                                    
+                                    return (
+                                        <motion.div 
+                                            key={i}
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            onClick={() => onDeviceClick(device)}
+                                            className="flex items-center gap-3 p-2 sm:p-3 rounded-xl bg-slate-900/30 hover:bg-slate-800/50 transition-colors cursor-pointer group touch-target"
+                                        >
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-${action.color}-500/20 text-${action.color}-400 flex items-center justify-center shrink-0`}>
+                                                <Icon name={action.icon} size={16} className="sm:w-5 sm:h-5" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs sm:text-sm text-slate-300 group-hover:text-white transition-colors truncate">
+                                                    <span className="font-mono text-brand-400">{device.id}</span> {action.text}
+                                                </p>
+                                                <p className="text-[10px] sm:text-xs text-slate-500">{Math.floor(Math.random() * 10) + 1}m ago</p>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -808,13 +1081,24 @@
             const [filter, setFilter] = useState('');
             const [statusFilter, setStatusFilter] = useState('all');
             const [selectedDevices, setSelectedDevices] = useState([]);
+            const [sortBy, setSortBy] = useState('name');
 
-            const filteredDevices = devices.filter(d => {
-                const matchesSearch = d.name.toLowerCase().includes(filter.toLowerCase()) || 
-                                    d.id.toLowerCase().includes(filter.toLowerCase());
-                const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-                return matchesSearch && matchesStatus;
-            });
+            const filteredDevices = useMemo(() => {
+                let filtered = devices.filter(d => {
+                    const matchesSearch = d.name.toLowerCase().includes(filter.toLowerCase()) || 
+                                        d.id.toLowerCase().includes(filter.toLowerCase()) ||
+                                        d.displayName.toLowerCase().includes(filter.toLowerCase());
+                    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+                    return matchesSearch && matchesStatus;
+                });
+                
+                return filtered.sort((a, b) => {
+                    if (sortBy === 'name') return a.name.localeCompare(b.name);
+                    if (sortBy === 'status') return a.status.localeCompare(b.status);
+                    if (sortBy === 'battery') return b.battery - a.battery;
+                    return 0;
+                });
+            }, [devices, filter, statusFilter, sortBy]);
 
             const toggleSelection = (id) => {
                 setSelectedDevices(prev => 
@@ -835,75 +1119,113 @@
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6 pb-24 sm:pb-0"
                 >
                     {/* Header */}
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-white">Device Fleet</h1>
-                            <p className="text-slate-400 text-sm">Manage and monitor all connected devices</p>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h1 className="text-xl sm:text-2xl font-bold text-white">Device Fleet</h1>
+                                <p className="text-slate-400 text-xs sm:text-sm">Manage {devices.length} connected devices</p>
+                            </div>
                         </div>
                         
                         {selectedDevices.length > 0 && (
                             <motion.div 
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="glass px-4 py-2 rounded-xl flex items-center gap-3 border border-brand-500/30"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass px-4 py-3 rounded-xl flex items-center justify-between border border-brand-500/30"
                             >
-                                <span className="text-sm text-white">{selectedDevices.length} selected</span>
-                                <div className="h-4 w-px bg-slate-700" />
-                                <button onClick={() => { onAction(selectedDevices, 'start'); addToast(`Started ${selectedDevices.length} devices`, 'success'); }} className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">Start All</button>
-                                <button onClick={() => { onAction(selectedDevices, 'stop'); addToast(`Stopped ${selectedDevices.length} devices`, 'info'); }} className="text-rose-400 hover:text-rose-300 text-sm font-medium">Stop All</button>
+                                <span className="text-sm text-white font-medium">{selectedDevices.length} selected</span>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => { onAction(selectedDevices, 'start'); addToast(`Started ${selectedDevices.length} devices`, 'success'); }}
+                                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium"
+                                    >
+                                        Start
+                                    </button>
+                                    <button 
+                                        onClick={() => { onAction(selectedDevices, 'stop'); addToast(`Stopped ${selectedDevices.length} devices`, 'info'); }}
+                                        className="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-medium"
+                                    >
+                                        Stop
+                                    </button>
+                                    <button 
+                                        onClick={() => setSelectedDevices([])}
+                                        className="px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg text-xs font-medium"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
                             </motion.div>
                         )}
                     </div>
 
                     {/* Filters */}
-                    <div className="glass p-4 rounded-2xl flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-1">
+                    <div className="glass p-3 sm:p-4 rounded-2xl space-y-3">
+                        <div className="relative">
                             <Icon name="search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                             <input 
                                 type="text" 
-                                placeholder="Search devices..."
+                                placeholder="Search devices, models, IDs..."
                                 value={filter}
                                 onChange={(e) => setFilter(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors touch-target"
                             />
                         </div>
-                        <div className="flex gap-2">
-                            {['all', 'online', 'busy', 'offline', 'error'].map(status => (
+                        
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                            {['all', 'online', 'busy', 'offline', 'error', 'maintenance'].map(status => (
                                 <button
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
-                                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                                    className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all touch-target ${
                                         statusFilter === status 
                                         ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/25' 
                                         : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
                                     }`}
                                 >
                                     {status.charAt(0).toUpperCase() + status.slice(1)}
+                                    {status !== 'all' && (
+                                        <span className="ml-2 opacity-60">
+                                            {devices.filter(d => d.status === status).length}
+                                        </span>
+                                    )}
                                 </button>
                             ))}
                         </div>
-                        <div className="flex gap-2 border-l border-slate-700 pl-2">
-                            <button 
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2.5 rounded-xl transition-colors ${viewMode === 'grid' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                        
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                            <select 
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="bg-slate-800 text-slate-300 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:outline-none touch-target"
                             >
-                                <Icon name="grid" size={18} />
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('list')}
-                                className={`p-2.5 rounded-xl transition-colors ${viewMode === 'list' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                            >
-                                <Icon name="list" size={18} />
-                            </button>
+                                <option value="name">Sort by Name</option>
+                                <option value="status">Sort by Status</option>
+                                <option value="battery">Sort by Battery</option>
+                            </select>
+                            
+                            <div className="flex gap-1 border-l border-slate-700 pl-2">
+                                <button 
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2 rounded-lg transition-colors touch-target ${viewMode === 'grid' ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    <Icon name="grid" size={18} />
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-2 rounded-lg transition-colors touch-target ${viewMode === 'list' ? 'bg-brand-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                >
+                                    <Icon name="list" size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {/* Content */}
                     {viewMode === 'grid' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                             <AnimatePresence>
                                 {filteredDevices.map((device) => (
                                     <DeviceCard 
@@ -917,75 +1239,95 @@
                         </div>
                     ) : (
                         <div className="glass rounded-2xl border border-white/5 overflow-hidden">
-                            <table className="w-full">
-                                <thead className="bg-slate-900/50 text-xs uppercase text-slate-500">
-                                    <tr>
-                                        <th className="p-4 text-left">
-                                            <input 
-                                                type="checkbox" 
-                                                checked={selectedDevices.length === filteredDevices.length && filteredDevices.length > 0}
-                                                onChange={selectAll}
-                                                className="rounded bg-slate-800 border-slate-600 text-brand-600"
-                                            />
-                                        </th>
-                                        <th className="p-4 text-left">Device</th>
-                                        <th className="p-4 text-left">Status</th>
-                                        <th className="p-4 text-left">Bot</th>
-                                        <th className="p-4 text-left">Task</th>
-                                        <th className="p-4 text-left">Proxy</th>
-                                        <th className="p-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-800">
-                                    {filteredDevices.map((device) => (
-                                        <motion.tr 
-                                            key={device.id}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="hover:bg-slate-800/30 transition-colors group"
-                                        >
-                                            <td className="p-4">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[600px]">
+                                    <thead className="bg-slate-900/50 text-xs uppercase text-slate-500">
+                                        <tr>
+                                            <th className="p-3 text-left">
                                                 <input 
                                                     type="checkbox" 
-                                                    checked={selectedDevices.includes(device.id)}
-                                                    onChange={() => toggleSelection(device.id)}
-                                                    className="rounded bg-slate-800 border-slate-600 text-brand-600"
+                                                    checked={selectedDevices.length === filteredDevices.length && filteredDevices.length > 0}
+                                                    onChange={selectAll}
+                                                    className="rounded bg-slate-800 border-slate-600 text-brand-600 touch-target"
                                                 />
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => onDeviceClick(device)}>
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                                                        device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'
-                                                    }`}>
-                                                        <Icon name="smartphone" size={18} />
+                                            </th>
+                                            <th className="p-3 text-left">Device</th>
+                                            <th className="p-3 text-left">Status</th>
+                                            <th className="p-3 text-left">Bot</th>
+                                            <th className="p-3 text-left hidden sm:table-cell">Task</th>
+                                            <th className="p-3 text-left hidden md:table-cell">Proxy</th>
+                                            <th className="p-3 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800 text-sm">
+                                        {filteredDevices.map((device) => (
+                                            <motion.tr 
+                                                key={device.id}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="hover:bg-slate-800/30 transition-colors group"
+                                            >
+                                                <td className="p-3">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedDevices.includes(device.id)}
+                                                        onChange={() => toggleSelection(device.id)}
+                                                        className="rounded bg-slate-800 border-slate-600 text-brand-600 touch-target"
+                                                    />
+                                                </td>
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => onDeviceClick(device)}>
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                                            device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'
+                                                        }`}>
+                                                            <Icon name="smartphone" size={18} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium text-white text-sm truncate">{device.name}</p>
+                                                            <p className="text-xs text-slate-500 font-mono truncate">{device.id}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-medium text-white text-sm">{device.name}</p>
-                                                        <p className="text-xs text-slate-500 font-mono">{device.id}</p>
+                                                </td>
+                                                <td className="p-3"><StatusBadge status={device.status} pulse={device.status === 'online'} /></td>
+                                                <td className="p-3"><StatusBadge status={device.botStatus} /></td>
+                                                <td className="p-3 text-slate-400 hidden sm:table-cell truncate max-w-[150px]">{device.task}</td>
+                                                <td className="p-3 text-slate-400 hidden md:table-cell">{device.proxy}</td>
+                                                <td className="p-3 text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <button 
+                                                            onClick={() => onAction(device.id, 'start')}
+                                                            disabled={device.botStatus === 'running'}
+                                                            className="p-2 hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-30 rounded-lg transition-colors touch-target"
+                                                        >
+                                                            <Icon name="play" size={16} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => onAction(device.id, 'stop')}
+                                                            disabled={device.botStatus === 'stopped'}
+                                                            className="p-2 hover:bg-rose-500/20 text-rose-400 disabled:opacity-30 rounded-lg transition-colors touch-target"
+                                                        >
+                                                            <Icon name="square" size={16} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => onDeviceClick(device)}
+                                                            className="p-2 hover:bg-brand-500/20 text-brand-400 rounded-lg transition-colors touch-target"
+                                                        >
+                                                            <Icon name="settings" size={16} />
+                                                        </button>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-4"><StatusBadge status={device.status} pulse={device.status === 'online'} /></td>
-                                            <td className="p-4"><StatusBadge status={device.botStatus} /></td>
-                                            <td className="p-4 text-sm text-slate-400">{device.task}</td>
-                                            <td className="p-4 text-sm text-slate-400">{device.proxy}</td>
-                                            <td className="p-4 text-right">
-                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => onAction(device.id, 'start')} className="p-2 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors">
-                                                        <Icon name="play" size={16} />
-                                                    </button>
-                                                    <button onClick={() => onAction(device.id, 'stop')} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors">
-                                                        <Icon name="square" size={16} />
-                                                    </button>
-                                                    <button onClick={() => onDeviceClick(device)} className="p-2 hover:bg-brand-500/20 text-brand-400 rounded-lg transition-colors">
-                                                        <Icon name="settings" size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {filteredDevices.length === 0 && (
+                        <div className="text-center py-12 text-slate-500">
+                            <Icon name="search-x" size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>No devices found matching your criteria</p>
                         </div>
                     )}
                 </motion.div>
@@ -994,12 +1336,12 @@
 
         const Proxies = ({ addToast }) => {
             const proxies = [
-                { id: 'US-NY-01', location: 'New York, USA', type: 'Static', latency: 45, devices: 12, health: 98 },
-                { id: 'DE-BER-02', location: 'Berlin, Germany', type: 'Static', latency: 62, devices: 8, health: 95 },
-                { id: 'SG-01', location: 'Singapore', type: 'Rotating', latency: 120, devices: 15, health: 87 },
-                { id: 'UK-LON-05', location: 'London, UK', type: 'Static', latency: 38, devices: 6, health: 99 },
-                { id: 'FR-PAR-01', location: 'Paris, France', type: 'Static', latency: 52, devices: 9, health: 92 },
-                { id: 'JP-TOK-03', location: 'Tokyo, Japan', type: 'Rotating', latency: 145, devices: 11, health: 88 },
+                { id: 'US-NY-01', location: 'New York, USA', type: 'Static', latency: 45, devices: 12, health: 98, isp: 'DigitalOcean', protocol: 'SOCKS5' },
+                { id: 'DE-BER-02', location: 'Berlin, Germany', type: 'Static', latency: 62, devices: 8, health: 95, isp: 'Hetzner', protocol: 'HTTP' },
+                { id: 'SG-01', location: 'Singapore', type: 'Rotating', latency: 120, devices: 15, health: 87, isp: 'AWS', protocol: 'SOCKS5' },
+                { id: 'UK-LON-05', location: 'London, UK', type: 'Static', latency: 38, devices: 6, health: 99, isp: 'Linode', protocol: 'HTTP' },
+                { id: 'FR-PAR-01', location: 'Paris, France', type: 'Static', latency: 52, devices: 9, health: 92, isp: 'OVH', protocol: 'SOCKS5' },
+                { id: 'JP-TOK-03', location: 'Tokyo, Japan', type: 'Rotating', latency: 145, devices: 11, health: 88, isp: 'Sakura', protocol: 'HTTP' },
             ];
 
             return (
@@ -1007,41 +1349,41 @@
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6 pb-24 sm:pb-0"
                 >
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-white">Proxy Management</h1>
-                            <p className="text-slate-400 text-sm">Configure and monitor proxy connections</p>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white">Proxy Management</h1>
+                            <p className="text-slate-400 text-xs sm:text-sm">Configure and monitor {proxies.length} proxy connections</p>
                         </div>
                         <motion.button 
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => addToast('Add proxy modal opened', 'info')}
-                            className="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 flex items-center gap-2"
+                            className="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 flex items-center justify-center gap-2 touch-target"
                         >
                             <Icon name="plus" size={16} /> Add Proxy
                         </motion.button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                         {proxies.map((proxy, i) => (
                             <motion.div
                                 key={proxy.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
+                                transition={{ delay: i * 0.05 }}
                                 whileHover={{ y: -4 }}
-                                className="glass p-5 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all cursor-pointer group"
+                                className="glass p-4 sm:p-5 rounded-2xl border border-white/5 hover:border-brand-500/30 transition-all touch-target"
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500/20 to-purple-500/20 text-brand-400 flex items-center justify-center border border-brand-500/20">
-                                            <Icon name="globe" size={24} />
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-brand-500/20 to-purple-500/20 text-brand-400 flex items-center justify-center border border-brand-500/20">
+                                            <Icon name="globe" size={20} className="sm:w-6 sm:h-6" />
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-white">{proxy.id}</h3>
-                                            <p className="text-xs text-slate-500">{proxy.location}</p>
+                                        <div className="min-w-0">
+                                            <h3 className="font-bold text-white text-sm sm:text-base truncate">{proxy.id}</h3>
+                                            <p className="text-xs text-slate-500 truncate">{proxy.location}</p>
                                         </div>
                                     </div>
                                     <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
@@ -1053,31 +1395,42 @@
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 mb-4">
-                                    <div className="bg-slate-900/50 p-3 rounded-xl">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
+                                    <div className="bg-slate-900/50 p-2 sm:p-3 rounded-xl">
                                         <p className="text-[10px] text-slate-500 uppercase">Latency</p>
-                                        <p className="text-lg font-mono text-white">{proxy.latency}ms</p>
+                                        <p className="text-base sm:text-lg font-mono text-white">{proxy.latency}ms</p>
                                     </div>
-                                    <div className="bg-slate-900/50 p-3 rounded-xl">
+                                    <div className="bg-slate-900/50 p-2 sm:p-3 rounded-xl">
                                         <p className="text-[10px] text-slate-500 uppercase">Devices</p>
-                                        <p className="text-lg font-mono text-white">{proxy.devices}</p>
+                                        <p className="text-base sm:text-lg font-mono text-white">{proxy.devices}</p>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
-                                    <span className="flex items-center gap-1">
-                                        <Icon name="shield" size={12} /> {proxy.type}
-                                    </span>
-                                    <span className="flex items-center gap-1 text-emerald-400">
+                                    <div className="flex items-center gap-3">
+                                        <span className="flex items-center gap-1">
+                                            <Icon name="shield" size={12} /> {proxy.type}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Icon name="server" size={12} /> {proxy.protocol}
+                                        </span>
+                                    </div>
+                                    <span className="text-emerald-400 flex items-center gap-1">
                                         <Icon name="check-circle" size={12} /> Active
                                     </span>
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <button onClick={() => addToast(`Testing ${proxy.id}...`, 'info')} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors">
+                                    <button 
+                                        onClick={() => addToast(`Testing ${proxy.id}... Latency: ${proxy.latency}ms`, 'success')}
+                                        className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors touch-target"
+                                    >
                                         Test
                                     </button>
-                                    <button onClick={() => addToast(`Rotating IPs for ${proxy.id}`, 'success')} className="flex-1 py-2 bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 rounded-lg text-xs font-medium transition-colors">
+                                    <button 
+                                        onClick={() => addToast(`Rotating IPs for ${proxy.id}`, 'info')}
+                                        className="flex-1 py-2.5 bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 rounded-xl text-xs font-medium transition-colors touch-target"
+                                    >
                                         Rotate
                                     </button>
                                 </div>
@@ -1097,69 +1450,71 @@
             const [isLoading, setIsLoading] = useState(true);
             const [toasts, setToasts] = useState([]);
             const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [isMobile, setIsMobile] = useState(false);
 
-            // Add toast notification
+            useEffect(() => {
+                const checkMobile = () => setIsMobile(window.innerWidth < 768);
+                checkMobile();
+                window.addEventListener('resize', checkMobile);
+                return () => window.removeEventListener('resize', checkMobile);
+            }, []);
+
             const addToast = useCallback((message, type = 'info') => {
                 const id = Date.now();
                 setToasts(prev => [...prev, { id, message, type }]);
             }, []);
 
-            // Remove toast
             const removeToast = useCallback((id) => {
                 setToasts(prev => prev.filter(t => t.id !== id));
             }, []);
 
-            // Generate initial data
             useEffect(() => {
                 setTimeout(() => {
-                    setDevices(generateDevices(16));
+                    setDevices(generateDevices(24));
                     setIsLoading(false);
-                    addToast('Welcome to NexusBot Command Center', 'success');
+                    addToast('Welcome to NexusBot Command Center v2.0', 'success');
                 }, 1500);
             }, [addToast]);
 
-            // Simulate real-time updates
             useEffect(() => {
                 if (isLoading) return;
-                
                 const interval = setInterval(() => {
                     setDevices(prev => {
                         const newDevices = [...prev];
                         const randomIdx = Math.floor(Math.random() * newDevices.length);
                         const device = { ...newDevices[randomIdx] };
-                        
                         if (Math.random() > 0.7) {
                             device.battery = Math.max(0, Math.min(100, device.battery + (Math.random() > 0.5 ? 1 : -1)));
                             newDevices[randomIdx] = device;
                         }
                         return newDevices;
                     });
-                }, 3000);
-
+                }, 5000);
                 return () => clearInterval(interval);
             }, [isLoading]);
 
-            // Handle device actions
             const handleAction = useCallback((deviceIds, action) => {
                 const ids = Array.isArray(deviceIds) ? deviceIds : [deviceIds];
-                
                 setDevices(prev => prev.map(d => {
                     if (ids.includes(d.id)) {
                         const updates = {};
                         if (action === 'start') {
                             updates.botStatus = 'running';
                             updates.status = 'busy';
+                            updates.task = 'Initializing...';
                         } else if (action === 'stop') {
                             updates.botStatus = 'stopped';
                             updates.status = 'online';
+                            updates.task = 'None';
                         } else if (action === 'restart') {
                             updates.botStatus = 'running';
+                            updates.task = 'Restarting...';
                         }
                         return { ...d, ...updates };
                     }
                     return d;
                 }));
-
                 addToast(`${action.charAt(0).toUpperCase() + action.slice(1)} ${ids.length > 1 ? `${ids.length} devices` : 'device'}`, 'success');
             }, [addToast]);
 
@@ -1187,17 +1542,25 @@
                         >
                             Initializing Cloud Controller...
                         </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="text-slate-600 text-xs mt-4 relative z-10"
+                        >
+                            Loading device fleet • Connecting to proxies • Syncing logs
+                        </motion.p>
                     </div>
                 );
             }
 
             return (
                 <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden font-sans selection:bg-brand-500/30">
-                    {/* Sidebar */}
+                    {/* Desktop Sidebar */}
                     <motion.aside 
                         initial={{ x: -100 }}
                         animate={{ x: 0 }}
-                        className={`${sidebarCollapsed ? 'w-20' : 'w-72'} bg-slate-900/50 backdrop-blur-xl border-r border-white/5 flex flex-col transition-all duration-300`}
+                        className={`hidden md:flex ${sidebarCollapsed ? 'w-20' : 'w-72'} bg-slate-900/50 backdrop-blur-xl border-r border-white/5 flex-col transition-all duration-300 shrink-0`}
                     >
                         <div className="p-6 flex items-center gap-3">
                             <motion.div 
@@ -1219,44 +1582,13 @@
                             )}
                         </div>
 
-                        <nav className="flex-1 px-3 space-y-1 mt-4">
-                            <SidebarItem 
-                                icon="layout-dashboard" 
-                                label={sidebarCollapsed ? '' : 'Dashboard'} 
-                                active={activeTab === 'dashboard'} 
-                                onClick={() => setActiveTab('dashboard')} 
-                            />
-                            <SidebarItem 
-                                icon="smartphone" 
-                                label={sidebarCollapsed ? '' : 'Devices'} 
-                                active={activeTab === 'devices'} 
-                                onClick={() => setActiveTab('devices')}
-                                badge={sidebarCollapsed ? devices.filter(d => d.status === 'error').length : null}
-                            />
-                            <SidebarItem 
-                                icon="globe" 
-                                label={sidebarCollapsed ? '' : 'Proxies'} 
-                                active={activeTab === 'proxies'} 
-                                onClick={() => setActiveTab('proxies')} 
-                            />
-                            <SidebarItem 
-                                icon="activity" 
-                                label={sidebarCollapsed ? '' : 'Sessions'} 
-                                active={activeTab === 'sessions'} 
-                                onClick={() => setActiveTab('sessions')} 
-                            />
-                            <SidebarItem 
-                                icon="terminal" 
-                                label={sidebarCollapsed ? '' : 'Logs'} 
-                                active={activeTab === 'logs'} 
-                                onClick={() => setActiveTab('logs')} 
-                            />
-                            <SidebarItem 
-                                icon="settings" 
-                                label={sidebarCollapsed ? '' : 'Settings'} 
-                                active={activeTab === 'settings'} 
-                                onClick={() => setActiveTab('settings')} 
-                            />
+                        <nav className="flex-1 px-3 space-y-1 mt-4 overflow-y-auto no-scrollbar">
+                            <SidebarItem icon="layout-dashboard" label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} collapsed={sidebarCollapsed} />
+                            <SidebarItem icon="smartphone" label="Devices" active={activeTab === 'devices'} onClick={() => setActiveTab('devices')} collapsed={sidebarCollapsed} badge={devices.filter(d => d.status === 'error').length || null} />
+                            <SidebarItem icon="globe" label="Proxies" active={activeTab === 'proxies'} onClick={() => setActiveTab('proxies')} collapsed={sidebarCollapsed} />
+                            <SidebarItem icon="activity" label="Sessions" active={activeTab === 'sessions'} onClick={() => setActiveTab('sessions')} collapsed={sidebarCollapsed} />
+                            <SidebarItem icon="terminal" label="Logs" active={activeTab === 'logs'} onClick={() => setActiveTab('logs')} collapsed={sidebarCollapsed} />
+                            <SidebarItem icon="settings" label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} collapsed={sidebarCollapsed} />
                         </nav>
 
                         {!sidebarCollapsed && (
@@ -1274,11 +1606,12 @@
                                     <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
                                         <div className="h-full w-3/4 bg-gradient-to-r from-brand-500 to-purple-500 rounded-full" />
                                     </div>
+                                    <p className="text-xs text-slate-500 mt-2">75% of quota used</p>
                                 </div>
                                 <motion.button 
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors text-sm font-medium"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors text-sm font-medium touch-target"
                                 >
                                     <Icon name="log-out" size={18} /> Logout
                                 </motion.button>
@@ -1294,8 +1627,49 @@
                             <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-t from-purple-600/5 to-transparent rounded-full blur-3xl" />
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 scroll-smooth">
+                        {/* Mobile Header */}
+                        <header className="md:hidden glass border-b border-white/5 p-4 safe-top flex items-center justify-between shrink-0 z-30">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                    <span className="font-bold text-white text-sm">N</span>
+                                </div>
+                                <span className="font-bold text-white">NexusBot</span>
+                            </div>
+                            <button 
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="p-2 text-slate-400 hover:text-white touch-target"
+                            >
+                                <Icon name={mobileMenuOpen ? "x" : "menu"} size={24} />
+                            </button>
+                        </header>
+
+                        {/* Mobile Menu Overlay */}
+                        <AnimatePresence>
+                            {mobileMenuOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="md:hidden absolute top-[73px] left-0 right-0 glass-strong border-b border-white/5 z-20 p-4 space-y-2"
+                                >
+                                    {['dashboard', 'devices', 'proxies', 'sessions', 'logs', 'settings'].map(tab => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => { setActiveTab(tab); setMobileMenuOpen(false); }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium touch-target ${
+                                                activeTab === tab ? 'bg-brand-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+                                            }`}
+                                        >
+                                            <Icon name={tab === 'dashboard' ? 'layout-dashboard' : tab === 'sessions' ? 'activity' : tab} size={18} />
+                                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Content Scroll Area */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 relative z-10 scroll-smooth safe-bottom">
                             <div className="max-w-7xl mx-auto">
                                 <AnimatePresence mode="wait">
                                     {activeTab === 'dashboard' && (
@@ -1327,7 +1701,7 @@
                                             key="sessions"
                                             initial={{ opacity: 0 }} 
                                             animate={{ opacity: 1 }}
-                                            className="flex flex-col items-center justify-center h-96 text-slate-500"
+                                            className="flex flex-col items-center justify-center h-96 text-slate-500 pb-20"
                                         >
                                             <div className="w-24 h-24 rounded-3xl bg-slate-900 flex items-center justify-center mb-6">
                                                 <Icon name="activity" size={48} className="opacity-20" />
@@ -1341,23 +1715,28 @@
                                             key="logs"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className="glass rounded-2xl p-6 h-[calc(100vh-8rem)] font-mono text-sm overflow-hidden"
+                                            className="glass rounded-2xl p-4 sm:p-6 h-[calc(100vh-8rem)] font-mono text-xs sm:text-sm overflow-hidden pb-20 sm:pb-6"
                                         >
                                             <div className="flex items-center gap-2 mb-4 pb-4 border-b border-white/5">
                                                 <Icon name="terminal" size={18} className="text-brand-400" />
                                                 <span className="text-white font-semibold">System Logs</span>
                                                 <span className="ml-auto text-xs text-slate-500">Auto-refresh: ON</span>
                                             </div>
-                                            <div className="space-y-1 text-xs overflow-y-auto h-full pb-20">
+                                            <div className="space-y-1 overflow-y-auto h-full pb-20">
                                                 <p className="text-emerald-400">root@nexus-controller:~$ systemctl status nexus-bot</p>
-                                                <p className="text-slate-400 mt-2">● nexus-bot.service - NexusBot Device Controller</p>
-                                                <p className="text-slate-400">   Loaded: loaded (/etc/systemd/system/nexus-bot.service; enabled)</p>
-                                                <p className="text-slate-400">   Active: <span className="text-emerald-400">active (running)</span> since Mon 2024-01-15 10:42:05 UTC</p>
-                                                <p className="text-slate-400 mt-2">Jan 15 10:42:05 controller nexus[1234]: [INFO] Connected to Redis cluster</p>
-                                                <p className="text-slate-400">Jan 15 10:42:06 controller nexus[1234]: [INFO] WebSocket server started on port 8080</p>
-                                                <p className="text-slate-400">Jan 15 10:43:12 controller nexus[1234]: [INFO] Device DEV-1001 connected</p>
-                                                <p className="text-amber-400">Jan 15 10:43:15 controller nexus[1234]: [WARN] High memory usage on DEV-1003 (85%)</p>
-                                                <p className="text-slate-400">Jan 15 10:44:00 controller nexus[1234]: [INFO] Scheduled task executed successfully</p>
+                                                <p className="text-slate-400 mt-2 ml-2">● nexus-bot.service - NexusBot Device Controller</p>
+                                                <p className="text-slate-400 ml-2">   Loaded: loaded (/etc/systemd/system/nexus-bot.service; enabled)</p>
+                                                <p className="text-slate-400 ml-2">   Active: <span className="text-emerald-400">active (running)</span> since Mon 2024-01-15 10:42:05 UTC</p>
+                                                <p className="text-slate-400 mt-2 ml-4">Main PID: 1234 (nexus)</p>
+                                                <p className="text-slate-400 ml-4">Tasks: 47 (limit: 4915)</p>
+                                                <p className="text-slate-400 ml-4">Memory: 2.4G</p>
+                                                <p className="text-slate-400 ml-4">CPU: 12.3%</p>
+                                                <p className="text-slate-400 mt-2 ml-2">Jan 15 10:42:05 controller nexus[1234]: [INFO] Connected to Redis cluster at redis:6379</p>
+                                                <p className="text-slate-400 ml-2">Jan 15 10:42:06 controller nexus[1234]: [INFO] WebSocket server started on 0.0.0.0:8080</p>
+                                                <p className="text-slate-400 ml-2">Jan 15 10:43:12 controller nexus[1234]: [INFO] Device DEV-1001 connected from 192.168.1.105</p>
+                                                <p className="text-amber-400 ml-2">Jan 15 10:43:15 controller nexus[1234]: [WARN] High memory usage detected on DEV-1003 (85%)</p>
+                                                <p className="text-slate-400 ml-2">Jan 15 10:44:00 controller nexus[1234]: [INFO] Scheduled maintenance task executed successfully</p>
+                                                <p className="text-emerald-400 ml-2">Jan 15 10:45:23 controller nexus[1234]: [INFO] Backup completed: 2.4GB uploaded to S3</p>
                                                 <p className="animate-pulse text-brand-400 mt-4">_</p>
                                             </div>
                                         </motion.div>
@@ -1367,35 +1746,23 @@
                                             key="settings"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className="max-w-2xl"
+                                            className="max-w-2xl pb-20"
                                         >
                                             <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
-                                            <div className="glass rounded-2xl p-6 space-y-6">
-                                                <div className="flex items-center justify-between pb-6 border-b border-white/5">
-                                                    <div>
-                                                        <h3 className="font-semibold text-white">Notifications</h3>
-                                                        <p className="text-sm text-slate-400">Receive alerts for device failures</p>
-                                                    </div>
-                                                    <button className="w-12 h-6 bg-brand-600 rounded-full relative transition-colors">
-                                                        <span className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
-                                                    </button>
-                                                </div>
-                                                <div className="flex items-center justify-between pb-6 border-b border-white/5">
-                                                    <div>
-                                                        <h3 className="font-semibold text-white">Auto-Restart</h3>
-                                                        <p className="text-sm text-slate-400">Restart failed bots automatically</p>
-                                                    </div>
-                                                    <button className="w-12 h-6 bg-slate-700 rounded-full relative transition-colors">
-                                                        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full" />
-                                                    </button>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <h3 className="font-semibold text-white">Dark Mode</h3>
-                                                        <p className="text-sm text-slate-400">Always use dark theme</p>
-                                                    </div>
-                                                    <button className="w-12 h-6 bg-brand-600 rounded-full relative transition-colors">
-                                                        <span className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
+                                            <div className="glass rounded-2xl p-4 sm:p-6 space-y-4">
+                                                <SettingToggle title="Push Notifications" description="Receive alerts for device failures and errors" defaultChecked={true} />
+                                                <SettingToggle title="Auto-Restart Failed Bots" description="Automatically restart bots that crash or hang" defaultChecked={true} />
+                                                <SettingToggle title="Dark Mode" description="Always use dark theme (recommended)" defaultChecked={true} disabled />
+                                                <SettingToggle title="Data Compression" description="Compress logs and screenshots before upload" defaultChecked={false} />
+                                                <SettingToggle title="Two-Factor Authentication" description="Require 2FA for admin actions" defaultChecked={true} />
+                                                
+                                                <div className="pt-4 border-t border-slate-800">
+                                                    <h3 className="text-sm font-semibold text-white mb-3">Danger Zone</h3>
+                                                    <button 
+                                                        onClick={() => addToast('Factory reset initiated for all devices', 'warning')}
+                                                        className="w-full py-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-600/30 rounded-xl text-sm font-medium transition-colors touch-target"
+                                                    >
+                                                        Factory Reset All Devices
                                                     </button>
                                                 </div>
                                             </div>
@@ -1405,6 +1772,9 @@
                             </div>
                         </div>
                     </main>
+
+                    {/* Mobile Bottom Nav */}
+                    <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} onMenuClick={() => setMobileMenuOpen(true)} />
 
                     {/* Modals */}
                     <AnimatePresence>
@@ -1417,7 +1787,7 @@
                         )}
                     </AnimatePresence>
 
-                    {/* Toast Notifications */}
+                    {/* Toasts */}
                     <AnimatePresence>
                         {toasts.map(toast => (
                             <Toast 
@@ -1428,6 +1798,25 @@
                             />
                         ))}
                     </AnimatePresence>
+                </div>
+            );
+        };
+
+        const SettingToggle = ({ title, description, defaultChecked, disabled }) => {
+            const [checked, setChecked] = useState(defaultChecked);
+            return (
+                <div className="flex items-center justify-between py-3 border-b border-slate-800/50 last:border-0">
+                    <div>
+                        <h3 className={`font-medium ${disabled ? 'text-slate-500' : 'text-white'}`}>{title}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+                    </div>
+                    <button 
+                        onClick={() => !disabled && setChecked(!checked)}
+                        disabled={disabled}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${checked ? 'bg-brand-600' : 'bg-slate-700'} ${disabled ? 'opacity-50' : ''}`}
+                    >
+                        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${checked ? 'left-7' : 'left-1'}`} />
+                    </button>
                 </div>
             );
         };
